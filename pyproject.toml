@@ -1,0 +1,25 @@
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-ra -q"
+testpaths = ["tests"]
+markers = ["trained: needs trained artifacts in artifacts/models (skipped otherwise)"]
+pythonpath = ["."]
+filterwarnings = [
+    "ignore::DeprecationWarning:joblib.*",
+    "ignore:.*httpx.*:DeprecationWarning",
+    "ignore::DeprecationWarning:joblib.numpy_pickle",
+    "ignore:Using `httpx` with `starlette.testclient` is deprecated",
+]
+
+[tool.ruff]
+line-length = 120
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+ignore = ["B008"]   # Depends() as a default argument is a standard FastAPI pattern
+
+[tool.ruff.lint.per-file-ignores]
+# report / portfolio builders emit Markdown and HTML rows: long string literals are content
+"src/evaluation/report.py" = ["E501"]
+"scripts/build_portfolio.py" = ["E501"]

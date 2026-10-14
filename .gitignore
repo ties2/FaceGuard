@@ -1,0 +1,21 @@
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+.pytest_cache/
+.ruff_cache/
+.idea/
+.vscode/
+.DS_Store
+
+# data and generated sessions are reproducible (make assets data sessions)
+data/
+model_artifacts/
+artifacts/models/*.pt
+portfolio/_build/
+reports/scores_*.csv
+*.db
+logs/
+*.log
+assets/models/face_recognition_sface_2021dec.onnx
