@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>FaceGuard Capture Demo</title>
+  <style>
+    :root {
+      --bg: #0e1116; --panel: #161b22; --line: #262d36; --text: #e6edf3; --muted: #8b949e;
+      --ok: #3fb950; --warn: #d29922; --review: #a371f7; --bad: #f85149; --accent: #58a6ff;
+    }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 15px/1.5 system-ui, -apple-system, Segoe UI, sans-serif; }
+    main { max-width: 980px; margin: 0 auto; padding: 24px 16px 48px; }
+    header { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+    h1 { font-size: 20px; margin: 0; letter-spacing: .2px; }
+    h1 span { color: var(--accent); }
+    .muted { color: var(--muted); }
+    .grid { display: grid; grid-template-columns: 1.1fr 1fr; gap: 16px; margin-top: 18px; }
+    @media (max-width: 760px) { .grid { grid-template-columns: 1fr; } }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; }
+    .card h2 { font-size: 13px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 0 0 10px; }
+    video { width: 100%; border-radius: 8px; background: #000; transform: scaleX(-1); aspect-ratio: 16/9; object-fit: cover; }
+    button { background: var(--accent); color: #0b0f14; border: 0; border-radius: 8px; padding: 10px 16px; font-weight: 600; cursor: pointer; }
+    button:disabled { opacity: .5; cursor: default; }
+    .row { display: flex; gap: 10px; align-items: center; margin-top: 12px; flex-wrap: wrap; }
+    #status { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 13px; }
+    .decision { font-size: 28px; font-weight: 700; letter-spacing: .5px; }
+    .APPROVE { color: var(--ok); } .STEP_UP { color: var(--warn); } .MANUAL_REVIEW { color: var(--review); } .REJECT { color: var(--bad); }
+    .layer { display: grid; grid-template-columns: 150px 1fr 58px; gap: 10px; align-items: center; margin: 8px 0; font-size: 13px; }
+    .bar { height: 8px; background: var(--line); border-radius: 4px; overflow: hidden; }
+    .bar > i { display: block; height: 100%; }
+    ul.reasons { margin: 8px 0 0; padding-left: 18px; font-size: 13px; }
+    .chips { margin: -2px 0 8px 160px; display: flex; flex-wrap: wrap; gap: 6px; }
+    .chip { font: 11px/1.6 ui-monospace, SFMono-Regular, Menlo, monospace; padding: 1px 8px; border-radius: 999px; background: #2d1b1b; color: #ffa198; border: 1px solid #5a2a2a; }
+    .chip.info { background: #161b22; color: var(--muted); border-color: var(--line); }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    td { padding: 4px 0; border-bottom: 1px solid var(--line); vertical-align: top; }
+    td:first-child { color: var(--muted); width: 42%; }
+    #flash { position: fixed; inset: 0; display: none; align-items: center; justify-content: center; z-index: 10; }
+    #flash video { width: min(46vw, 420px); border: 3px solid rgba(0,0,0,.35); }
+    #flash p { position: absolute; bottom: 6vh; width: 100%; text-align: center; color: #000; font-weight: 700; mix-blend-mode: difference; }
+  </style>
+</head>
+<body>
+  <main>
+    <header>
+      <h1>Face<span>Guard</span> · capture demo</h1>
+      <span class="muted">nonce-bound photometric challenge · telemetry · server-side decision</span>
+    </header>
+
+    <div class="grid">
+      <section class="card">
+        <h2>Camera</h2>
+        <video id="preview" autoplay playsinline muted></video>
+        <img id="audit" alt="audit frame sent to the server" style="display:none;width:100%;border-radius:8px;transform:scaleX(-1)" />
+        <div class="row">
+          <button id="start">Start verification</button>
+          <span id="status" class="muted">idle</span>
+        </div>
+        <p class="muted" style="font-size:13px;margin:12px 0 0">
+          Your screen will flash a short colour sequence issued by the server for this session.
+          A real face reflects it; a replayed or injected video cannot.
+        </p>
+      </section>
+
+      <section class="card" id="result">
+        <h2>Decision</h2>
+        <div id="decision" class="decision muted">—</div>
+        <div id="layers"></div>
+        <ul id="reasons" class="reasons"></ul>
+        <h2 style="margin-top:16px">Telemetry sent</h2>
+        <table id="telemetry"></table>
+      </section>
+    </div>
+  </main>
+
+  <div id="flash"><video id="flashVideo" autoplay playsinline muted></video><p>Hold still · keep your face in view</p></div>
+  <script src="capture.js"></script>
+</body>
+</html>
