@@ -1,0 +1,316 @@
+{
+  "title": "FaceGuard - Liveness Defence",
+  "uid": "faceguard",
+  "schemaVersion": 39,
+  "refresh": "10s",
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "templating": {
+    "list": [
+      {
+        "name": "platform",
+        "type": "query",
+        "datasource": "Prometheus",
+        "query": "label_values(faceguard_decisions_total, platform)",
+        "refresh": 1,
+        "includeAll": true,
+        "multi": true,
+        "current": {
+          "text": "All",
+          "value": "$__all"
+        }
+      }
+    ]
+  },
+  "panels": [
+    {
+      "title": "Approve share (1h)",
+      "type": "stat",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 0,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(faceguard_decisions_total{decision=\"APPROVE\",platform=~\"$platform\"}[1h])) / clamp_min(sum(rate(faceguard_decisions_total{platform=~\"$platform\"}[1h])), 1e-9)",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit"
+        }
+      }
+    },
+    {
+      "title": "Reject share (1h)",
+      "type": "stat",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 6,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(faceguard_decisions_total{decision=\"REJECT\",platform=~\"$platform\"}[1h])) / clamp_min(sum(rate(faceguard_decisions_total{platform=~\"$platform\"}[1h])), 1e-9)",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit"
+        }
+      }
+    },
+    {
+      "title": "Friction: step-up + review (1h)",
+      "type": "stat",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 12,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "sum(rate(faceguard_decisions_total{decision=~\"STEP_UP|MANUAL_REVIEW\",platform=~\"$platform\"}[1h])) / clamp_min(sum(rate(faceguard_decisions_total{platform=~\"$platform\"}[1h])), 1e-9)",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit"
+        }
+      }
+    },
+    {
+      "title": "Review queue confirmed-attack rate (24h)",
+      "type": "stat",
+      "gridPos": {
+        "h": 4,
+        "w": 6,
+        "x": 18,
+        "y": 0
+      },
+      "targets": [
+        {
+          "expr": "sum(increase(faceguard_review_outcomes_total{outcome=\"confirmed_attack\"}[24h])) / clamp_min(sum(increase(faceguard_review_outcomes_total[24h])),1)",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "percentunit"
+        }
+      }
+    },
+    {
+      "title": "Decisions per second by outcome",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 4
+      },
+      "targets": [
+        {
+          "expr": "sum by(decision) (rate(faceguard_decisions_total{platform=~\"$platform\"}[5m]))",
+          "legendFormat": "{{decision}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "stacking": {
+              "mode": "normal"
+            }
+          }
+        }
+      }
+    },
+    {
+      "title": "Attack signals by finding code",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 4
+      },
+      "targets": [
+        {
+          "expr": "sum by(code) (rate(faceguard_findings_total[5m]))",
+          "legendFormat": "{{code}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "stacking": {
+              "mode": "none"
+            }
+          }
+        }
+      }
+    },
+    {
+      "title": "Layer score p50 / p95",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 12
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.5, sum by(le, layer) (rate(faceguard_layer_score_bucket[15m])))",
+          "legendFormat": "p50 {{layer}}",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum by(le, layer) (rate(faceguard_layer_score_bucket[15m])))",
+          "legendFormat": "p95 {{layer}}",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "stacking": {
+              "mode": "none"
+            }
+          }
+        }
+      }
+    },
+    {
+      "title": "Session-level rejections (replay, forged token, velocity, device farm)",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 12
+      },
+      "targets": [
+        {
+          "expr": "sum by(code) (increase(faceguard_session_rejected_total[15m]))",
+          "legendFormat": "{{code}}",
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "stacking": {
+              "mode": "none"
+            }
+          }
+        }
+      }
+    },
+    {
+      "title": "Vendor (FaceTec) failed security checks / errors",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 20
+      },
+      "targets": [
+        {
+          "expr": "sum by(check) (increase(faceguard_vendor_check_failed_total[15m]))",
+          "legendFormat": "{{check}}",
+          "refId": "A"
+        },
+        {
+          "expr": "increase(faceguard_vendor_errors_total[15m])",
+          "legendFormat": "vendor errors",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "stacking": {
+              "mode": "none"
+            }
+          }
+        }
+      }
+    },
+    {
+      "title": "Analysis latency",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 20
+      },
+      "targets": [
+        {
+          "expr": "histogram_quantile(0.5, sum by(le) (rate(faceguard_pipeline_latency_seconds_bucket[5m])))",
+          "legendFormat": "p50",
+          "refId": "A"
+        },
+        {
+          "expr": "histogram_quantile(0.95, sum by(le) (rate(faceguard_pipeline_latency_seconds_bucket[5m])))",
+          "legendFormat": "p95",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "stacking": {
+              "mode": "none"
+            }
+          },
+          "unit": "s"
+        }
+      }
+    },
+    {
+      "title": "Detector model loads / cache (MSP)",
+      "type": "timeseries",
+      "gridPos": {
+        "h": 8,
+        "w": 24,
+        "x": 0,
+        "y": 28
+      },
+      "targets": [
+        {
+          "expr": "sum by(model, version) (rate(model_cache_hits_total{model=~\"faceguard.*\"}[5m]))",
+          "legendFormat": "hit {{model}}:{{version}}",
+          "refId": "A"
+        },
+        {
+          "expr": "sum by(model, version) (increase(model_load_total{model=~\"faceguard.*\"}[15m]))",
+          "legendFormat": "load {{model}}:{{version}}",
+          "refId": "B"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "custom": {
+            "stacking": {
+              "mode": "none"
+            }
+          }
+        }
+      }
+    }
+  ]
+}

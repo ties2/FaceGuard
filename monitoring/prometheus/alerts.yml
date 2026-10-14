@@ -1,0 +1,85 @@
+# FaceGuard alert rules — rationale and thresholds: docs/04-recommendations.md §3
+groups:
+  - name: faceguard-attacks
+    rules:
+      - alert: InjectionToolingSurge
+        expr: |
+          sum(rate(faceguard_findings_total{code=~"VIRTUAL_CAMERA|EMULATOR|HOOKING_FRAMEWORK|BROWSER_AUTOMATION|ATTESTATION_FAILED"}[15m]))
+            / clamp_min(sum(rate(faceguard_decisions_total[15m])), 1e-9) > 0.05
+        for: 10m
+        labels: {severity: warning, team: fraud}
+        annotations:
+          summary: "More than 5% of sessions carry injection-tooling signatures"
+          runbook: "docs/04-recommendations.md#31-attack-signals"
+      - alert: ChallengeFailureSurge
+        expr: |
+          sum(rate(faceguard_findings_total{code=~"CHALLENGE_NOT_REFLECTED|CHALLENGE_REFLECTION_DELAYED"}[15m]))
+            / clamp_min(sum(rate(faceguard_decisions_total[15m])), 1e-9) > 0.08
+        for: 15m
+        labels: {severity: warning, team: fraud}
+        annotations:
+          summary: "Photometric challenge failing on >8% of sessions (stealth injection campaign or client regression)"
+      - alert: RejectRateSpike
+        expr: |
+          (sum(rate(faceguard_decisions_total{decision="REJECT"}[30m])) / clamp_min(sum(rate(faceguard_decisions_total[30m])), 1e-9))
+            > 2 * (sum(rate(faceguard_decisions_total{decision="REJECT"}[7d])) / clamp_min(sum(rate(faceguard_decisions_total[7d])), 1e-9))
+        for: 30m
+        labels: {severity: warning, team: fraud}
+        annotations:
+          summary: "Reject share doubled vs 7-day baseline"
+      - alert: SessionReplayAttempt
+        expr: increase(faceguard_session_rejected_total{code=~"SESSION_REPLAY|SESSION_TOKEN_INVALID"}[10m]) > 0
+        labels: {severity: info, team: fraud}
+        annotations:
+          summary: "Replayed or forged liveness session submissions observed"
+      - alert: DeviceFarmSuspected
+        expr: increase(faceguard_session_rejected_total{code="DEVICE_MULTI_IDENTITY"}[1h]) > 5
+        labels: {severity: warning, team: fraud}
+        annotations:
+          summary: "Devices attempting liveness for many identities (account farming)"
+
+  - name: faceguard-quality
+    rules:
+      - alert: BonaFideFrictionHigh
+        expr: |
+          sum(rate(faceguard_decisions_total{decision=~"STEP_UP|MANUAL_REVIEW"}[1h]))
+            / clamp_min(sum(rate(faceguard_decisions_total[1h])), 1e-9) > 0.12
+        for: 1h
+        labels: {severity: warning, team: ml}
+        annotations:
+          summary: "Step-up + manual review above 12% (~1.4x the calibrated level) — BPCER drift or client regression"
+      - alert: DeepfakeScoreDrift
+        expr: |
+          histogram_quantile(0.5, sum by (le) (rate(faceguard_layer_score_bucket{layer="deepfake"}[1h])))
+            > 2 * histogram_quantile(0.5, sum by (le) (rate(faceguard_layer_score_bucket{layer="deepfake"}[7d])))
+        for: 2h
+        labels: {severity: warning, team: ml}
+        annotations:
+          summary: "Median deepfake score doubled vs 7-day baseline (new camera/app build, or campaign)"
+      - alert: ReviewersOverturnMostCases
+        expr: |
+          sum(increase(faceguard_review_outcomes_total{outcome="confirmed_genuine"}[24h]))
+            / clamp_min(sum(increase(faceguard_review_outcomes_total[24h])), 1) > 0.9
+        for: 6h
+        labels: {severity: info, team: ml}
+        annotations:
+          summary: ">90% of manual reviews are genuine — review band may be too wide"
+
+  - name: faceguard-dependencies
+    rules:
+      - alert: LivenessVendorUnavailable
+        expr: increase(faceguard_vendor_errors_total[5m]) > 3
+        labels: {severity: critical, team: platform}
+        annotations:
+          summary: "FaceTec Server errors — flow is failing closed (step-up)"
+      - alert: VendorSecurityCheckFailures
+        expr: increase(faceguard_vendor_check_failed_total{check=~"replayCheckSucceeded|sessionTokenCheckSucceeded|auditTrailVerificationCheckSucceeded"}[15m]) > 0
+        labels: {severity: warning, team: fraud}
+        annotations:
+          summary: "Vendor reported replay / token / audit-trail check failures"
+      - alert: PipelineLatencyHigh
+        expr: histogram_quantile(0.95, sum by (le) (rate(faceguard_pipeline_latency_seconds_bucket[10m]))) > 1.5
+        for: 10m
+        labels: {severity: warning, team: platform}
+        annotations:
+          summary: "p95 analysis latency above 1.5 s"
