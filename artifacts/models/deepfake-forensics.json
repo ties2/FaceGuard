@@ -1,0 +1,18 @@
+{
+  "n": 6486,
+  "features": [
+    "noise_ratio",
+    "sharp_ratio",
+    "hf_ratio_face",
+    "seam_grad_ratio",
+    "seam_color_jump",
+    "chroma_ratio",
+    "periodic_peak",
+    "noise_face"
+  ],
+  "val_auc": {
+    "sbi": 0.9037453672086617,
+    "swap": 0.8662533283200711,
+    "gan": 0.506127178275182
+  }
+}

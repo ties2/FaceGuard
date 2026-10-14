@@ -1,0 +1,27 @@
+version: cal-20261014-val1083
+pad:
+  review: 0.9477031059015152
+  reject: 0.9704138725581836
+capture_integrity:
+  review: 0.9119070809531156
+  reject: 0.987443799329958
+deepfake:
+  review: 0.8427453482783945
+  reject: 0.9089809431974372
+face_match_min_cosine: 0.363
+max_attempts_per_identity_24h: 3
+max_attempts_per_device_24h: 5
+max_identities_per_device_30d: 2
+session_ttl_seconds: 120
+calibration:
+  split: val
+  bona_fide_sessions: 1083
+  bpcer_budget:
+    vendor_pad: 0.01
+    pad_reject: 0.005
+    ci_review: 0.02
+    ci_reject: 0.005
+    df_review: 0.015
+    df_reject: 0.005
+  vendor_pad_threshold: 0.9477031059015152
+  method: per-layer bona fide quantiles (attack data not used)

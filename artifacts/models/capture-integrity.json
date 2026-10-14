@@ -1,0 +1,27 @@
+{
+  "n": 7567,
+  "n_attack": 5405,
+  "cv_auc": 0.996480205272542,
+  "features": [
+    "chal_corr_early",
+    "chal_corr_late",
+    "chal_best_lag",
+    "chal_corr_face_early",
+    "chal_amp_face",
+    "chal_bg_ratio",
+    "ts_std",
+    "ts_mean_err",
+    "dup_ratio",
+    "noise_spatial",
+    "noise_temporal",
+    "hf_ratio"
+  ],
+  "species": [
+    "bona_fide",
+    "emulator_injection",
+    "print_photo",
+    "screen_replay",
+    "vcam_offline_faceswap",
+    "vcam_prerecorded"
+  ]
+}
