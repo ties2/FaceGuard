@@ -58,6 +58,15 @@ def register_all(client, version: str, artifacts: Path = ARTIFACTS) -> list[dict
         )
         if r.status_code not in (200, 400):
             raise RuntimeError(f"register {name}: {r.status_code} {r.text}")
+        current = {v["version"]: v["status"] for v in client.get(f"/models/{name}/versions").json()}
+        if current.get(version) == "production":  # already live: re-running is a no-op
+            out.append({"model_name": name, "version": version, "status": "production"})
+            continue
+        if current.get(version) == "archived":
+            raise RuntimeError(
+                f"{name}:{version} is archived (MSP never re-promotes archived versions). "
+                f"Register a new version, e.g. --version 1.0.1"
+            )
         p = client.post(f"/models/{name}/versions/{version}/promote")
         if p.status_code != 200:
             raise RuntimeError(f"promote {name}: {p.status_code} {p.text}")

@@ -19,3 +19,4 @@ reports/scores_*.csv
 logs/
 *.log
 assets/models/face_recognition_sface_2021dec.onnx
+/docs/MyNotes

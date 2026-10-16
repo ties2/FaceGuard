@@ -119,7 +119,28 @@ structured logs. The original MSP test suite still runs unchanged.
 ## Quick start
 
 ```bash
+#linux/Mac
+python3.12 -m venv .venv
+source .venv/bin/activate
+#windows
+py -3.12 -m venv .venv
+.venv\Scripts\Activate.ps1
+
+which python #/FaceGuard/.venv/bin/python
+python -m pip install --upgrade pip
 pip install -r requirements-train.txt
+python -m pytest -q
+
+#just api in doker
+docker compose up -d db
+python -m src.training.register --version 1.0.0 --in-process
+uvicorn src.serving.app:app --reload --port 8000
+
+#all in docker
+docker compose up --build -d
+docker compose exec api python -m src.training.register --version 1.0.0
+
+---
 make assets data sessions train eval report   # full pipeline on CPU (~1.5 h on 2 cores)
 make test                                     # MSP + FaceGuard suites: 119/119 passing (SQLite, no Docker)
 make run                                      # registers detectors, API on :8000, capture demo at /demo

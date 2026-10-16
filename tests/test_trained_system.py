@@ -18,7 +18,7 @@ from src.serving.app import app
 from src.serving.cache import model_cache
 from src.training.register import MODELS, register_all
 from tests.helpers import astronaut_face, b64jpeg
-from tests.test_liveness_api import _challenge
+from tests.test_liveness_api import _challenge, fixed_secret_sessions
 
 ART = Path("artifacts/models")
 POLICY = Path("configs/policy.yaml")
@@ -35,6 +35,7 @@ pytestmark = [
 def client():
     pol = Policy.load(POLICY)
     app.dependency_overrides[liveness_api.get_policy] = lambda: pol
+    app.dependency_overrides[liveness_api.get_sessions] = fixed_secret_sessions
     model_cache.clear()
     with TestClient(app) as c:
         register_all(c, f"trained-{uuid.uuid4().hex[:6]}")

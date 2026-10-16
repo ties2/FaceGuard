@@ -38,12 +38,15 @@ class Settings(BaseSettings):
 
     @property
     def sqlalchemy_url(self) -> str:
-        if self.database_url:
-            return self.database_url
-        return (
+        url = self.database_url or (
             f"postgresql://{self.postgres_user}:{self.postgres_password}"
             f"@{self.postgres_host}:{self.postgres_port}/{self.postgres_db}"
         )
+        # SQLAlchemy 2.1 maps a bare "postgresql://" to psycopg 3; this project ships
+        # psycopg2-binary (as MSP did), so pin the driver explicitly.
+        if url.startswith("postgresql://"):
+            url = "postgresql+psycopg2://" + url[len("postgresql://") :]
+        return url
 
 
 settings = Settings()
